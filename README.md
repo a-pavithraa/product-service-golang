@@ -11,7 +11,10 @@ POC in Golang to check KeyCloak and Migrate usage
 1. Clone the repository.
 2. Spin up KeyCloak and PostgreSQL containers by using `docker-compose up -d`.
 3. Start the application by using `go run main.go`.
-4. Import the Postman collection from Products.postman_collection.json
+4. Import the Postman collection from Products.postman_collection.json.
+5. In the collection, click on Get New Access token. When asked for credentials, provide admin/admin for admin user and user1/user1 for regular user. Click on Use token once authenticated.
+6. All the endpoints can be accessed only when step 5 is done. Otherwise 401 error is thrown.
+7. Only the admin user has access to POST/Product endpoint
 
 ## Additional Details
 
