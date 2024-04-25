@@ -1,5 +1,16 @@
 {
-  "port": ":8085",
+  "port": ":8080",
   "logLevel": "INFO",
-  "regions": ["us-east-1","ap-south-1","us-east-2"]
+  "keycloak": {
+    "url": "http://localhost:9191",
+    "realm": "Products"
+   
+  },
+  "db": {
+    "host": "localhost",
+    "port": 15432,
+    "database": "postgres",
+    "username": "postgres",
+    "password": "postgres"
+  }
 }

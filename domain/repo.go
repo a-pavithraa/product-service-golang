@@ -1,41 +1,20 @@
-package service
+package domain
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 
 	"github.com/a-pavithraa/product-service-golang/models"
+	"github.com/a-pavithraa/product-service-golang/util"
 )
 
-type ProductNameFoundError struct {
-	message string
-}
-
-func (e *ProductNameFoundError) Error() string {
-	return e.message
-}
-
-func NewProductNameFoundError(message string) *ProductNameFoundError {
-	return &ProductNameFoundError{
-		message: message,
-	}
-}
-
-type ProductNotFoundError struct {
-	message string
-}
-
-func (e *ProductNotFoundError) Error() string {
-	return e.message
-}
-func NewProductNotFoundError(message string) *ProductNotFoundError {
-	return &ProductNotFoundError{
-		message: message,
-	}
-}
+var config = util.LoadAppConfig()
 
 func ConnectToDatabase() (*sql.DB, error) {
-	return sql.Open("postgres", "host=localhost port=15432 user=postgres password=postgres dbname=postgres sslmode=disable")
+	//return sql.Open("postgres", "host=localhost port=15432 user=postgres password=postgres dbname=postgres sslmode=disable")
+	return sql.Open("postgres", fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", config.DBConfig.Host, config.DBConfig.Port, config.DBConfig.Username, config.DBConfig.Password, config.DBConfig.Database))
+
 }
 
 func CheckProductNameExists(name string) error {

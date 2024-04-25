@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"time"
 
+	service "github.com/a-pavithraa/product-service-golang/domain"
 	"github.com/a-pavithraa/product-service-golang/models" // Import the models package
-	"github.com/a-pavithraa/product-service-golang/service"
 	"github.com/a-pavithraa/product-service-golang/util"
 	"github.com/gin-gonic/gin"
-	"github.com/szuecs/gin-glog"
+	ginglog "github.com/szuecs/gin-glog"
 	"github.com/tbaehler/gin-keycloak/pkg/ginkeycloak"
 )
 
@@ -25,16 +25,27 @@ func NewApiServer(settings util.AppSettings) *Server {
 	router.Use(ginglog.Logger(3 * time.Second))
 	router.Use(ginkeycloak.RequestLogger([]string{"uid"}, "data"))
 	router.Use(gin.Recovery())
-	var sbbEndpoint = ginkeycloak.KeycloakConfig{
-		Url:           "http://keycloak:8080",
-		Realm:         "Products",
+	keycloakConfig := ginkeycloak.KeycloakConfig{
+		Url:           settings.KeycloakConfig.BaseURL,
+		Realm:         settings.KeycloakConfig.Realm,
 		FullCertsPath: nil,
 	}
-	privateGroup := router.Group("/api")
-	privateGroup.Use(ginkeycloak.Auth(ginkeycloak.AuthCheck(), sbbEndpoint))
-	privateGroup.GET("/products", server.GetProducts)
-	privateGroup.GET("/product/:id", server.GetProductByID)
-	privateGroup.POST("/product", server.PostProduct)
+	normalUserGroup := router.Group("/api")
+	normalUserGroup.Use(ginkeycloak.Auth(ginkeycloak.AuthCheck(), keycloakConfig))
+	normalUserGroup.GET("/products", server.GetProducts)
+	normalUserGroup.GET("/product/:id", server.GetProductByID)
+
+	adminUserGroup := router.Group("/api")
+	config := ginkeycloak.BuilderConfig{
+		Service: "products-service",
+		Url:     settings.KeycloakConfig.BaseURL,
+		Realm:   settings.KeycloakConfig.Realm,
+	}
+	adminUserGroup.Use(ginkeycloak.NewAccessBuilder(config).
+		RestrictButForRealm("ROLE_ADMIN").
+		Build())
+
+	adminUserGroup.POST("/product", server.PostProduct)
 
 	return server
 }
@@ -42,7 +53,10 @@ func NewApiServer(settings util.AppSettings) *Server {
 func (server *Server) Start(addr string) error {
 	return server.Router.Run(addr)
 }
+
+// Endpoint to get all products
 func (server *Server) GetProducts(c *gin.Context) {
+
 	products, err := service.GetProducts()
 	if err != nil {
 		log.Println(err)
@@ -52,6 +66,8 @@ func (server *Server) GetProducts(c *gin.Context) {
 	// Return the products as JSON response
 	c.JSON(http.StatusOK, products)
 }
+
+// Endpoint to get a product by ID
 func (server *Server) GetProductByID(c *gin.Context) {
 	// Get the product ID from the request parameters
 	productID := c.Param("id")
@@ -65,6 +81,8 @@ func (server *Server) GetProductByID(c *gin.Context) {
 	// Return the product as JSON response
 	c.JSON(http.StatusOK, product)
 }
+
+// Endpoint to create a new product
 func (server *Server) PostProduct(c *gin.Context) {
 	// Parse the request body into a Product struct
 	var product models.Product

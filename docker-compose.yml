@@ -1,0 +1,47 @@
+version: "3.8"
+name: 'products-service'
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:22.0.3
+    command: [ 'start-dev --import-realm' ]
+    volumes:
+      - ./realm-config:/opt/keycloak/data/import
+    container_name: keycloak
+    hostname: keycloak
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin1234
+    ports:
+      - "9191:8080"
+  products-db:
+    image: postgres:16-alpine
+    container_name: products-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - "15432:5432"
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 500m
+  products-service:
+    image: pavithravasudevan/products-service:latest
+    container_name: products-service
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - DB_URL=jdbc:postgresql://products-db:5432/postgres
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - OAUTH_SERVER=http://keycloak:8080/realms/Products
+    ports:
+      - "8081:8081"
+    depends_on:
+      - products-db
+      - keycloak
