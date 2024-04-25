@@ -58,9 +58,15 @@ func (server *Server) Start(addr string) error {
 func (server *Server) GetProducts(c *gin.Context) {
 
 	products, err := service.GetProducts()
+
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query the database"})
+		return
+	}
+	if products == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "No products found"})
+		return
 	}
 
 	// Return the products as JSON response

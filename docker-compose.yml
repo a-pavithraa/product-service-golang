@@ -4,6 +4,8 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:22.0.3
     command: [ 'start-dev --import-realm' ]
+    networks:
+      - new
     volumes:
       - ./realm-config:/opt/keycloak/data/import
     container_name: keycloak
@@ -16,6 +18,10 @@ services:
   products-db:
     image: postgres:16-alpine
     container_name: products-db
+    networks:
+      new:
+        aliases:
+          - database
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -31,17 +37,17 @@ services:
       resources:
         limits:
           memory: 500m
-  products-service:
-    image: pavithravasudevan/products-service:latest
-    container_name: products-service
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - DB_URL=jdbc:postgresql://products-db:5432/postgres
-      - DB_USERNAME=postgres
-      - DB_PASSWORD=postgres
-      - OAUTH_SERVER=http://keycloak:8080/realms/Products
-    ports:
-      - "8081:8081"
+  migrate:
+    image: migrate/migrate
+    networks:
+      - new
+    volumes:
+      - ./db/migration:/migrations
+    
+    command: ["-path", "/migrations/", "-database",  "postgres://postgres:postgres@database:5432/postgres?sslmode=disable", "up", "2"]
+    links: 
+      - products-db
     depends_on:
       - products-db
-      - keycloak
+networks:
+      new:
