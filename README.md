@@ -21,3 +21,5 @@ POC in Golang to check KeyCloak and Migrate usage
 1. KeyCloak Realm is imported on startup. 
 2. Table creation and populating inital records for the table are taken care by Migrate. If any changes need to be done in schema, add a new migration file in db/migrations folder following the convention mentioned in https://github.com/golang-migrate/migrate
 
+## References
+https://www.sivalabs.in/spring-security-oauth2-tutorial-introduction/
